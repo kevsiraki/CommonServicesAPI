@@ -1,0 +1,36 @@
+# Ignore environment configuration
+.env
+
+# Ignore vendor directory (managed by Composer)
+vendor/
+
+# Ignore logs
+logs/
+
+# Ignore Composer lock file if this is a library (optional)
+# If it's an app, you might want to keep this
+# composer.lock
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor configurations
+*.swp
+*.swo
+*.bak
+*.tmp
+.idea/
+.vscode/
+
+# Ignore runtime cache/temp files (if applicable)
+*.log
+*.cache
+*.pid
+
+# Node/npm if used at any point
+node_modules/
+
+# PHPStorm / NetBeans / Eclipse
+nbproject/
+*.iml

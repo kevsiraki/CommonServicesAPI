@@ -1,0 +1,122 @@
+<?php
+header('Content-Type: application/json');
+
+require_once 'config.php';
+
+$data = json_decode(file_get_contents('php://input'), true);
+
+require_once 'send_email.php';
+require_once 'send_discord.php';
+require_once 'tweet.php';
+require_once 'health_check.php';
+
+$uri = $_SERVER['REQUEST_URI'];
+$method = $_SERVER['REQUEST_METHOD'];
+
+function fetch_file_from_url($url) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERPWD, ''.env('NEXTCLOUD_USER').':'.env('NEXTCLOUD_KEY').''); // handle auth
+    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    $data = curl_exec($ch);
+    if (curl_errno($ch) || curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+        curl_close($ch);
+        return false;
+    }
+    curl_close($ch);
+    return $data;
+}
+
+switch (true) {
+    case preg_match('/\/email$/', $uri):
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
+                http_response_code(403);
+                die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+            }
+    
+            if (empty($data['to'])) {
+                http_response_code(400);
+                die(json_encode(['error' => '"to" field is required to send emails.']));
+            }
+    
+            $attachments = [];
+            if (!empty($data['attachments']) && is_array($data['attachments'])) {
+                foreach ($data['attachments'] as $url) {
+                    $content = fetch_file_from_url($url);
+                    if ($content !== false) {
+                        $filename = basename(parse_url($url, PHP_URL_PATH));
+                        $attachments[] = ['filename' => $filename, 'content' => $content];
+                    }
+                }
+            }
+    
+            echo json_encode(send_email(
+                $data['to'], 
+                $data['name'] ?? '', 
+                $data['subject'] ?? '', 
+                html_entity_decode($data['body'] ?? ''), 
+                $attachments,
+                $data['cc'] ?? '' // Optional cc field
+            ));
+        } else {
+            http_response_code(405);
+            die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+        }
+        break;
+
+    case preg_match('/\/discord$/', $uri):
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+        }
+    
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            exit(json_encode(['error' => 'Invalid JSON payload']));
+        }
+    
+        if (empty($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
+            http_response_code(403);
+            exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+        }
+    
+        if (empty($data['url'])) {
+            http_response_code(400);
+            exit(json_encode(['error' => 'FAIL: "url" field is required to send Discord webhook requests.']));
+        }
+        if (empty($data['content']) && empty($data['embeds'])) {
+            http_response_code(400);
+            exit(json_encode(['error' => 'FAIL: either "content" or "embeds" must be provided']));
+        }
+    
+        // everything looks good — send it
+        $result = send_discord($data);
+        echo json_encode($result);
+        break;
+
+    case preg_match('/\/tweet$/', $uri):
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
+                http_response_code(403);
+                die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+            }   
+            if(empty($data['message'])) die('FAIL: "message" field is required to Tweet.');
+            echo json_encode(post_tweet($data['message']));
+        }
+        else die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+        break;
+        
+    case preg_match('/\/health$/', $uri):
+        echo json_encode(health_check());
+        break;
+        
+    case preg_match('/\/easter$/', $uri):
+        echo json_encode(['easter'=>date("M-d-Y", easter_date()), 'daysAfterMarch21stForEasterThisYear'=>easter_days()]);
+        break;
+        
+    default:
+        http_response_code(404);
+        echo json_encode(['error' => 'Unknown endpoint']);
+}
