@@ -10,22 +10,13 @@ require_once 'send_discord.php';
 require_once 'tweet.php';
 require_once 'health_check.php';
 require_once 'nextcloud.php';
-
+require_once 'generate_pdf.php';
 require_once 'helpers.php';
 
 $uri = rtrim($_SERVER['REQUEST_URI'], '/');
 $method = $_SERVER['REQUEST_METHOD'];
 
 exec("nohup sudo /home/toggle_gpio.sh > /dev/null 2>&1 &");
-
-/*
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'http://192.168.1.134');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Don't output response
-curl_setopt($ch, CURLOPT_HEADER, false);        // Don't output headers
-curl_exec($ch);
-curl_close($ch);
-*/
 
 switch (true) {
     case preg_match('/\/email$/', $uri):
@@ -177,6 +168,27 @@ switch (true) {
 
             echo json_encode(nc_nest(
                 $data['path'] ?? '',
+            ));
+        } else {
+            http_response_code(405);
+            die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+        }
+        break;
+
+    case preg_match('/\/eflorm$/', $uri):
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                http_response_code(400);
+                exit(json_encode(['error' => 'Invalid JSON payload']));
+            }
+
+            if (empty($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
+                http_response_code(403);
+                exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+            }
+
+            echo json_encode(geneFlorm(
+                $data ?? '',
             ));
         } else {
             http_response_code(405);
