@@ -149,6 +149,7 @@ function geneFlorm($data)
     if (in_array($httpCode, [200, 207]) && $fileContent !== false) {
         header('Content-Type: ' . ($contentType ?: 'application/pdf'));
         header('Content-Disposition: attachment; filename="' . $id . '_lore_report.pdf"');
+        log_event("eFlorm generated for lore with ID: " . $id . ", and uploaded to: " . $remote_url);
         echo $fileContent;
     } else {
         http_response_code(500);
