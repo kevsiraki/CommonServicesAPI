@@ -1,21 +1,4 @@
 <?php
-
-/*
-function fetch_file_from_url($url) {
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_USERPWD, ''.env('NEXTCLOUD_USER').':'.env('NEXTCLOUD_KEY').''); // handle auth
-    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-    $data = curl_exec($ch);
-    if (curl_errno($ch) || curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
-        curl_close($ch);
-        return false;
-    }
-    curl_close($ch);
-    return $data;
-}
-*/
-
 /**
  * Downloads a file from a URL, optionally with Nextcloud credentials if matched.
  */
@@ -39,7 +22,11 @@ function fetch_file_from_url($url) {
     return $data;
 }
 
-// Mime extenion mapper
+/*
+Mime extenion mapper
+
+Utilized for estimating the file extension by the mime type of the file.
+*/
 function get_extension_from_mime($mime) {
     $map = [
         'application/pdf' => 'pdf',
@@ -63,3 +50,21 @@ function get_extension_from_mime($mime) {
 
     return $map[$mime] ?? 'bin';
 }
+
+//Deprecated Code Below
+
+/*
+function fetch_file_from_url($url) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERPWD, ''.env('NEXTCLOUD_USER').':'.env('NEXTCLOUD_KEY').''); // handle auth
+    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    $data = curl_exec($ch);
+    if (curl_errno($ch) || curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+        curl_close($ch);
+        return false;
+    }
+    curl_close($ch);
+    return $data;
+}
+*/
