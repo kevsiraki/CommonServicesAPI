@@ -24,7 +24,7 @@ function fetch_file_from_url($url) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     // If it's a Nextcloud URL, apply basic auth
-    if (strpos($url, env('NEXTCLOUD_BASE_URL')) === 0) {
+    if (!empty($url) && isset($url) && !empty(env('NEXTCLOUD_BASE_URL')) && env('NEXTCLOUD_BASE_URL') !== NULL && strpos($url, env('NEXTCLOUD_BASE_URL')) === 0) {
         curl_setopt($ch, CURLOPT_USERPWD, env('NEXTCLOUD_USER') . ':' . env('NEXTCLOUD_KEY'));
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
     }
