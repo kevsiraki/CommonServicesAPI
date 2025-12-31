@@ -216,6 +216,8 @@ Generates a PDF document from submitted data.
 }
 ```
 
+* **TODO: Add Docs on osTicket Gateway Endpoints :)**
+
 ### Common Status Codes
 
 | Status | Meaning                       |

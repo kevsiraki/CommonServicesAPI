@@ -11,6 +11,7 @@ require_once 'tweet.php';
 require_once 'health_check.php';
 require_once 'nextcloud.php';
 require_once 'generate_pdf.php';
+require_once 'osticket.php';
 require_once 'helpers.php';
 
 $uri = rtrim($_SERVER['REQUEST_URI'], '/');
@@ -193,6 +194,26 @@ switch (true) {
         } else {
             http_response_code(405);
             die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+        }
+        break;
+
+    case preg_match('#/osticket(?:\?.*)?$#', $uri):
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                http_response_code(400);
+                exit(json_encode(['error' => 'Invalid JSON payload']));
+            }
+
+            create_ticket($data);
+        } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            if (isset($_GET['ticket'])) {
+                get_ticket($_GET['ticket']);
+            } else {
+                get_tickets();
+            }
+        } else {
+            http_response_code(405);
+            die(json_encode(['error' => 'FAIL: POST or GET method is required for this endpoint.']));
         }
         break;
 
