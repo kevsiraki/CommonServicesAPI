@@ -3,13 +3,16 @@
 require_once 'config.php';
 require_once 'logger.php';
 
+// Downstream IPs
+$keys = [
+    env('PI_4_IP') => env('OSTICKET_API_KEY_PI_4'),
+    env('PI_5_IP') => env('OSTICKET_API_KEY_PI_5'),
+];
+
 // POST
 function create_ticket($data)
 {
-    $keys = [
-        '192.168.1.86' => env('OSTICKET_API_KEY_PI_4'),
-        '192.168.1.134' => env('OSTICKET_API_KEY_PI_5'),
-    ];
+    global $keys;
 
     $ip = $_SERVER['SERVER_ADDR'];
     $x_api_key = $keys[$ip] ?? null;
@@ -19,7 +22,7 @@ function create_ticket($data)
         exit('Unauthorized IP' . $ip);
     }
 
-    $url = env('OSTICKET_API_URI').'.json';
+    $url = env('OSTICKET_API_URI') . '.json';
 
     // Basic validation
     $requiredFields = ['name', 'email', 'subject', 'message'];
@@ -83,6 +86,8 @@ function create_ticket($data)
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
+    log_event("osTicket Created for " . trim($data['name']) . ".");
+
     if ($response === false) {
         http_response_code(500);
         echo json_encode([
@@ -103,10 +108,7 @@ function create_ticket($data)
 
 function get_tickets()
 {
-    $keys = [
-        '192.168.1.86' => env('OSTICKET_API_KEY_PI_4'),
-        '192.168.1.134' => env('OSTICKET_API_KEY_PI_5'),
-    ];
+    global $keys;
 
     $ip = $_SERVER['SERVER_ADDR'];
     $x_api_key = $keys[$ip] ?? null;
@@ -116,7 +118,7 @@ function get_tickets()
         exit('Unauthorized IP' . $ip);
     }
 
-    $url = env('OSTICKET_API_URI').'.json';
+    $url = env('OSTICKET_API_URI') . '.json';
     // Send to osTicket
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -149,10 +151,7 @@ function get_tickets()
 
 function get_ticket($tik)
 {
-    $keys = [
-        '192.168.1.86' => env('OSTICKET_API_KEY_PI_4'),
-        '192.168.1.134' => env('OSTICKET_API_KEY_PI_5'),
-    ];
+    global $keys;
 
     $ip = $_SERVER['SERVER_ADDR'];
     $x_api_key = $keys[$ip] ?? null;
@@ -162,8 +161,8 @@ function get_ticket($tik)
         exit('Unauthorized IP' . $ip);
     }
 
-    $url = env('OSTICKET_API_URI').'/'.$tik.'.json';
-    
+    $url = env('OSTICKET_API_URI') . '/' . $tik . '.json';
+
     // Send to osTicket
     $ch = curl_init($url);
     curl_setopt_array($ch, [

@@ -206,10 +206,16 @@ switch (true) {
 
             create_ticket($data);
         } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            if (isset($_GET['ticket'])) {
-                get_ticket($_GET['ticket']);
-            } else {
-                get_tickets();
+            if (isset($_GET['key']) && !empty($_GET['key']) && $_GET['key'] === env('MASTER_SECRET_KEY')) {
+                if (isset($_GET['ticket'])) {
+                    get_ticket($_GET['ticket']);
+                } else {
+                    get_tickets();
+                }
+            }
+            else {
+                http_response_code(403);
+                exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
             }
         } else {
             http_response_code(405);
