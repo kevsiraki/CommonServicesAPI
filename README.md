@@ -206,6 +206,121 @@ Generates a PDF document from submitted data.
 
 ---
 
+## `POST /osticket`
+
+Create an osTicket support ticket.
+
+* **Body Example:**
+
+```json
+{
+  "name": "<name>",
+  "email": "<email>",
+  "subject": "<subject>",
+  "message": "data:text/html,MESSAGE <b>HERE</b>",
+  "attachments": [
+      {"file.txt": "data:text/plain;charset=utf-8,content"},
+      {"image.png": "data:image/png;base64,R0lGODdhMAA..."},
+  ]
+}
+```
+
+* **Response:**
+  osTicket number.
+
+---
+
+## `GET /osticket?key=<key>`
+
+Fetch all existing osTicket tickets.
+
+* **Method:** `GET`
+* **Body:** None
+* **Params:**
+  * `key` — *(required)* authentication key
+* **Response (Example):**
+
+```json
+[
+  {
+    "id": 14,
+    "number": "350721",
+    "subject": "Issue with Login",
+    "status": "Open",
+    "dept": "Support",
+    "created": "2025-12-25 15:32:26",
+    "priority_id": 2,
+    "user": {
+      "name": {
+        "format": "original",
+        "parts": {
+          "salutation": "",
+          "first": "Alice",
+          "middle": "",
+          "last": "Johnson",
+          "suffix": ""
+        },
+        "name": "Alice Johnson"
+      },
+      "email": {
+        "email": "alice.johnson@example.com",
+        "address": "\"Alice Johnson\" <alice.johnson@example.com>"
+      }
+    },
+    "message": "User is unable to log into the portal..."
+  },
+  {
+    ...
+  }
+]
+```
+
+---
+
+
+## `GET /osticket?key=<key>&ticket=<ticket>`
+
+Fetch a single osTicket ticket by ticket number.
+
+* **Method:** `GET`
+* **Params:**
+  * `key` — *(required)* authentication key
+  * `ticket` — *(required)* ticket number or ticket ID
+* **Body:** None
+* **Response (Example):**
+
+```json
+{
+  "id": 14,
+  "number": "350721",
+  "subject": "Issue with Login",
+  "status": "Open",
+  "dept": "Support",
+  "created": "2025-12-25 15:32:26",
+  "priority_id": 2,
+  "user": {
+    "name": {
+      "format": "original",
+      "parts": {
+        "salutation": "",
+        "first": "Alice",
+        "middle": "",
+        "last": "Johnson",
+        "suffix": ""
+      },
+      "name": "Alice Johnson"
+    },
+    "email": {
+      "email": "alice.johnson@example.com",
+      "address": "\"Alice Johnson\" <alice.johnson@example.com>"
+    }
+  },
+  "message": "User is unable to log into the portal..."
+}
+```
+
+---
+
 ## Error Handling
 
 ### Unknown Endpoint
@@ -215,8 +330,6 @@ Generates a PDF document from submitted data.
   "error": "Unknown endpoint"
 }
 ```
-
-* **TODO: Add Docs on osTicket Gateway Endpoints :)**
 
 ### Common Status Codes
 
@@ -229,4 +342,3 @@ Generates a PDF document from submitted data.
 | 403    | Unauthorized (invalid `key`)  |
 | 404    | Not Found                     |
 | 405    | Method Not Allowed            |
-
