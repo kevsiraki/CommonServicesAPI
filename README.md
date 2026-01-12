@@ -230,14 +230,15 @@ Create an osTicket support ticket.
 
 ---
 
-## `GET /osticket?key=<key>`
+## `GET /osticket`
 
-Fetch all existing osTicket tickets.
+Fetch All (top 100) or One existing osTicket tickets.
 
 * **Method:** `GET`
 * **Body:** None
 * **Params:**
   * `key` — *(required)* authentication key
+  * `ticket` — *(optional)* ticket number or ticket ID
 * **Response (Example):**
 
 ```json
@@ -277,49 +278,6 @@ Fetch all existing osTicket tickets.
 
 ---
 
-
-## `GET /osticket?key=<key>&ticket=<ticket>`
-
-Fetch a single osTicket ticket by ticket number.
-
-* **Method:** `GET`
-* **Params:**
-  * `key` — *(required)* authentication key
-  * `ticket` — *(required)* ticket number or ticket ID
-* **Body:** None
-* **Response (Example):**
-
-```json
-{
-  "id": 14,
-  "number": "350721",
-  "subject": "Issue with Login",
-  "status": "Open",
-  "dept": "Support",
-  "created": "2025-12-25 15:32:26",
-  "priority_id": 2,
-  "user": {
-    "name": {
-      "format": "original",
-      "parts": {
-        "salutation": "",
-        "first": "Alice",
-        "middle": "",
-        "last": "Johnson",
-        "suffix": ""
-      },
-      "name": "Alice Johnson"
-    },
-    "email": {
-      "email": "alice.johnson@example.com",
-      "address": "\"Alice Johnson\" <alice.johnson@example.com>"
-    }
-  },
-  "message": "User is unable to log into the portal..."
-}
-```
-
----
 
 ## Error Handling
 
