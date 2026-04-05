@@ -7,7 +7,6 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 require_once 'send_email.php';
 require_once 'send_discord.php';
-require_once 'tweet.php';
 require_once 'health_check.php';
 require_once 'nextcloud.php';
 require_once 'generate_pdf.php';
@@ -66,7 +65,6 @@ switch (true) {
                         $filename = 'attachment_' . uniqid() . '.bin'; // default unknown type
                     }
 
-
                     // Associative array with a URL and optional filename
                     elseif (is_array($item) && isset($item['url']) && filter_var($item['url'], FILTER_VALIDATE_URL)) {
                         $content = fetch_file_from_url($item['url']);
@@ -89,14 +87,14 @@ switch (true) {
                 }
             }
 
-            echo json_encode(send_email(
+            die(json_encode(send_email(
                 $data['to'],
                 $data['name'] ?? '',
                 $data['subject'] ?? '',
                 html_entity_decode($data['body'] ?? ''),
                 $attachments,
                 $data['cc'] ?? '' // Optional CC field
-            ));
+            )));
         } else {
             http_response_code(405);
             die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
@@ -106,70 +104,57 @@ switch (true) {
     case preg_match('/\/discord$/', $uri):
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            exit(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+            die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
         }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             http_response_code(400);
-            exit(json_encode(['error' => 'Invalid JSON payload']));
+            die(json_encode(['error' => 'Invalid JSON payload']));
         }
 
         if (empty($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
             http_response_code(403);
-            exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+            die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
         }
 
         if (empty($data['url'])) {
             http_response_code(400);
-            exit(json_encode(['error' => 'FAIL: "url" field is required to send Discord webhook requests.']));
+            die(json_encode(['error' => 'FAIL: "url" field is required to send Discord webhook requests.']));
         }
         if (empty($data['content']) && empty($data['embeds'])) {
             http_response_code(400);
-            exit(json_encode(['error' => 'FAIL: either "content" or "embeds" must be provided']));
+            die(json_encode(['error' => 'FAIL: either "content" or "embeds" must be provided']));
         }
 
         // everything looks good — send it
         $result = send_discord($data);
-        echo json_encode($result);
-        break;
-
-    case preg_match('/\/tweet$/', $uri):
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!isset($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
-                http_response_code(403);
-                die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
-            }
-            if (empty($data['message']))
-                die('FAIL: "message" field is required to Tweet.');
-            echo json_encode(post_tweet($data['message']));
-        } else
-            die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
+        die(json_encode($result));
         break;
 
     case ($uri == '/CommonServices'):
     case preg_match('/\/health$/', $uri):
-        echo json_encode(health_check());
+        die(json_encode(health_check()));
         break;
 
     case preg_match('/\/easter$/', $uri):
-        echo json_encode(['easter' => date("M-d-Y", easter_date()), 'daysAfterMarch21stForEasterThisYear' => easter_days()]);
+        die(json_encode(['easter' => date("M-d-Y", easter_date()), 'daysAfterMarch21stForEasterThisYear' => easter_days()]));
         break;
 
     case preg_match('#/nc/nest$#', $uri):
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (json_last_error() !== JSON_ERROR_NONE) {
                 http_response_code(400);
-                exit(json_encode(['error' => 'Invalid JSON payload']));
+                die(json_encode(['error' => 'Invalid JSON payload']));
             }
 
             if (empty($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
                 http_response_code(403);
-                exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+                die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
             }
 
-            echo json_encode(nc_nest(
+            die(json_encode(nc_nest(
                 $data['path'] ?? '',
-            ));
+            )));
         } else {
             http_response_code(405);
             die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
@@ -180,17 +165,17 @@ switch (true) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (json_last_error() !== JSON_ERROR_NONE) {
                 http_response_code(400);
-                exit(json_encode(['error' => 'Invalid JSON payload']));
+                die(json_encode(['error' => 'Invalid JSON payload']));
             }
 
             if (empty($data['key']) || $data['key'] !== env('MASTER_SECRET_KEY')) {
                 http_response_code(403);
-                exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+                die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
             }
 
-            echo json_encode(geneFlorm(
+            die(json_encode(geneFlorm(
                 $data ?? '',
-            ));
+            )));
         } else {
             http_response_code(405);
             die(json_encode(['error' => 'FAIL: POST method is required for this endpoint.']));
@@ -201,21 +186,29 @@ switch (true) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (json_last_error() !== JSON_ERROR_NONE) {
                 http_response_code(400);
-                exit(json_encode(['error' => 'Invalid JSON payload']));
+                die(json_encode(['error' => 'Invalid JSON payload']));
             }
 
             create_ticket($data);
         } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            if (isset($_GET['key']) && !empty($_GET['key']) && $_GET['key'] === env('MASTER_SECRET_KEY')) {
+            $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+
+            $is_local_network = str_starts_with($client_ip, env('LOCAL_NETWORK_PREFIX'));
+            $is_local_network_vpn = str_starts_with($client_ip, env('VPN_PREFIX'));
+
+            $valid_key = isset($_GET['key']) &&
+                !empty($_GET['key']) &&
+                hash_equals(env('MASTER_SECRET_KEY'), $_GET['key']);
+
+            if ($is_local_network || $valid_key || $is_local_network_vpn) {
                 if (isset($_GET['ticket'])) {
                     get_ticket($_GET['ticket']);
                 } else {
                     get_tickets();
                 }
-            }
-            else {
+            } else {
                 http_response_code(403);
-                exit(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
+                die(json_encode(['error' => 'Unauthorized: Invalid or missing key']));
             }
         } else {
             http_response_code(405);
@@ -223,7 +216,11 @@ switch (true) {
         }
         break;
 
+    case preg_match('/\/ipaddr$/', $uri):
+        die(json_encode(['client_ip' => $_SERVER['HTTP_X_FORWARDED_FOR']]));
+        break;
+
     default:
         http_response_code(404);
-        echo json_encode(['error' => 'Unknown endpoint']);
+        die(json_encode(['error' => 'Unknown endpoint']));
 }

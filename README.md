@@ -105,30 +105,6 @@ Sends a message to a Discord webhook.
 
 ---
 
-## `POST /tweet`
-
-Posts a tweet using the configured Twitter account.
-
-* **Body:**
-
-```json
-{
-  "key": "<your_secret_key>",
-  "message": "New product feature has been launched. Visit our website for more details."
-}
-```
-
-* **Response:**
-
-```json
-{
-  "success": true,
-  "tweet_id": "1941613922743939236"
-}
-```
-
----
-
 ## `/easter`
 
 Returns Easter Sunday for the current year and offset from March 21.
