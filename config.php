@@ -1,10 +1,76 @@
 <?php
-require 'vendor/autoload.php';
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->load();
 
-function env($key, $default = null) {
-    return $_ENV[$key] ?? $default;
+/**
+ * Common Services configuration bootstrap.
+ *
+ * 2026-07-19:
+ * Migrated the environment file from:
+ *
+ *     /var/www/html/site/CommonServices/.env
+ *
+ * to:
+ *
+ *     /etc/commonservices/.env
+ *
+ * This keeps credentials and other secrets outside the web directory.
+ */
+
+/*
+ * Original autoloader path, replaced on 2026-07-19 with an absolute path
+ * based on this file's location:
+ *
+ * require 'vendor/autoload.php';
+ */
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+/*
+ * Original dotenv loading logic, replaced on 2026-07-19:
+ *
+ * $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+ * $dotenv->load();
+ */
+
+$envDirectory = '/etc/commonservices';
+$envFile = $envDirectory . '/.env';
+
+if (!is_readable($envFile)) {
+    error_log(
+        'Configuration error: environment file is missing or unreadable: '
+        . $envFile
+    );
+
+    http_response_code(500);
+    exit('Internal server error');
+}
+
+try {
+    $dotenv = Dotenv\Dotenv::createImmutable($envDirectory);
+    $dotenv->load();
+} catch (Throwable $exception) {
+    error_log(
+        'Configuration error while loading environment variables: '
+        . $exception->getMessage()
+    );
+
+    http_response_code(500);
+    exit('Internal server error');
+}
+
+/**
+ * Read an environment variable.
+ *
+ * 2026-07-19:
+ * Retained the existing helper behavior while adding a return type and
+ * supporting values loaded into either $_ENV or $_SERVER.
+ *
+ * @param string $key
+ * @param mixed $default
+ * @return mixed
+ */
+function env(string $key, $default = null)
+{
+    return $_ENV[$key] ?? $_SERVER[$key] ?? $default;
 }
 
 /*
